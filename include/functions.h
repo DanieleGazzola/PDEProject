@@ -17,7 +17,7 @@ template <int dim>
 class BetaFunction : public Function<dim>
 {
 public:
-    virtual Tensor<1, dim> value(const Point<dim> &p) const override;
+    virtual Tensor<1, dim> gradient(const Point<dim> &p, const unsigned int component = 0) const override;
 };
 
 template <int dim>

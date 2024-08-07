@@ -14,7 +14,7 @@ class CustomOperator : public MatrixFreeOperators::Base<dim, LinearAlgebra::dist
 public:
     CustomOperator() = default;
 
-    void initialize(const MatrixFree<dim, double> &matrix_free,
+    void initialize(std::shared_ptr<const MatrixFree<dim, double>> matrix_free,
                     const Function<dim> &mu,
                     const Function<dim> &beta,
                     const Function<dim> &gamma);
@@ -26,7 +26,5 @@ private:
     SmartPointer<const Function<dim>> beta;
     SmartPointer<const Function<dim>> gamma;
 };
-
-#include "../src/operator.cpp"
 
 #endif // OPERATOR_H

@@ -32,12 +32,15 @@ int main()
 // matrix free setup
     MatrixFree<dim, double> matrix_free;
     CustomOperator<dim> custom_operator;
+
+    auto matrix_free_ptr = std::make_shared<MatrixFree<dim, double>>();
+
     MuFunction<dim> mu_function;
     BetaFunction<dim> beta_function;
     GammaFunction<dim> gamma_function;
 
     matrix_free.reinit(dof_handler);
-    custom_operator.initialize(matrix_free, mu_function, beta_function, gamma_function);
+    custom_operator.initialize(matrix_free_ptr, mu_function, beta_function, gamma_function);
 
 // solve system
     SourceFunction<dim> source_function;

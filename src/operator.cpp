@@ -1,12 +1,14 @@
 #include "operator.h"
 
 template<int dim>
-void CustomOperator<dim>::initialize(const MatrixFree<dim, double> &matrix_free,
+void CustomOperator<dim>::initialize(std::shared_ptr<const MatrixFree<dim, double>> matrix_free,
                                      const Function<dim> &mu_function,
                                      const Function<dim> &beta_function,
                                      const Function<dim> &gamma_function)
 {
-    this->MatrixFreeOperators::Base<dim, LinearAlgebra::distributed::Vector<double>, VectorizedArray<double>>::initialize(matrix_free);
+    const std::vector<unsigned int> row = {};
+    const std::vector<unsigned int> col = {};
+    this->MatrixFreeOperators::Base<dim, LinearAlgebra::distributed::Vector<double>, VectorizedArray<double>>::initialize(matrix_free, row, col);
     mu = &mu_function;
     beta = &beta_function;
     gamma = &gamma_function;
@@ -16,9 +18,9 @@ template<int dim>
 void CustomOperator<dim>::apply_add(LinearAlgebra::distributed::Vector<double> &dst, const LinearAlgebra::distributed::Vector<double> &src) const
 {
 
-    FEEvaluation<dim, 1> fe_eval(this->data);
+    FEEvaluation<dim, 1> fe_eval(*(this->data));
 
-    for (unsigned int cell = 0; cell < this->data.n_macro_cells(); ++cell)
+    for (unsigned int cell = 0; cell < (*(this->data)).n_cell_batches(); ++cell)
     {
         fe_eval.reinit(cell);
         fe_eval.read_dof_values(src);
@@ -26,15 +28,20 @@ void CustomOperator<dim>::apply_add(LinearAlgebra::distributed::Vector<double> &
 
         for (unsigned int q = 0; q < fe_eval.n_q_points; ++q)
         {
-            const auto mu_value = mu->value(fe_eval.quadrature_point(q));
-            const auto beta_value = beta->value(fe_eval.quadrature_point(q));
-            const auto gamma_value = gamma->value(fe_eval.quadrature_point(q));
+            dealii::Point<dim, double> qp_scalar;
+
+            for (unsigned int d = 0; d < dim; ++d)
+                    qp_scalar[d] = fe_eval.quadrature_point(q)[d][0];
+
+            const auto mu_value = mu->value(qp_scalar);
+            const auto beta_value = beta->gradient(qp_scalar);
+            const auto gamma_value = gamma->value(qp_scalar);
 
             // -∇·(µ∇u)
             fe_eval.submit_gradient(-mu_value * fe_eval.get_gradient(q), q);
 
             // ∇·(βu)
-            fe_eval.submit_value(fe_eval.get_gradient(q) * beta_value, q);
+            fe_eval.submit_gradient(beta_value * fe_eval.get_value(q), q);
 
             // γu
             fe_eval.submit_value(gamma_value * fe_eval.get_value(q), q);

@@ -10,7 +10,8 @@ void setup_problem(
     GridGenerator::hyper_cube(triangulation);
     triangulation.refine_global(level);
 
-    dof_handler.initialize(triangulation, fe);
+    dof_handler.reinit(triangulation);
+    dof_handler.distribute_dofs(fe);
 }
 
 template void setup_problem<2>(Triangulation<2> &, FE_Q<2> &, DoFHandler<2> &, const unsigned int);
