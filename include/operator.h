@@ -7,9 +7,10 @@
 #include <deal.II/lac/la_parallel_vector.h>
 
 using namespace dealii;
+using VectorType = LinearAlgebra::distributed::Vector<double>;
 
 template<int dim>
-class CustomOperator : public MatrixFreeOperators::Base<dim, LinearAlgebra::distributed::Vector<double>, VectorizedArray<double>>
+class CustomOperator : public MatrixFreeOperators::Base<dim, VectorType, VectorizedArray<double>>
 {
 public:
     CustomOperator() = default;
@@ -19,7 +20,11 @@ public:
                     const Function<dim> &beta,
                     const Function<dim> &gamma);
 
-    void apply_add(LinearAlgebra::distributed::Vector<double> &dst, const LinearAlgebra::distributed::Vector<double> &src) const override;
+    void vmult(VectorType &dst, const VectorType &src) const;
+
+    virtual void compute_diagonal() override {}
+    virtual void apply_add(VectorType & /*dst*/, const VectorType & /*src*/) const override {}
+
 
 private:
     SmartPointer<const Function<dim>> mu;

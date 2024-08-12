@@ -1,5 +1,7 @@
 #include "operator.h"
 
+using VectorType = LinearAlgebra::distributed::Vector<double>;
+
 template<int dim>
 void CustomOperator<dim>::initialize(std::shared_ptr<const MatrixFree<dim, double>> matrix_free,
                                      const Function<dim> &mu_function,
@@ -8,14 +10,14 @@ void CustomOperator<dim>::initialize(std::shared_ptr<const MatrixFree<dim, doubl
 {
     const std::vector<unsigned int> row = {};
     const std::vector<unsigned int> col = {};
-    this->MatrixFreeOperators::Base<dim, LinearAlgebra::distributed::Vector<double>, VectorizedArray<double>>::initialize(matrix_free, row, col);
+    this->MatrixFreeOperators::Base<dim, VectorType, VectorizedArray<double>>::initialize(matrix_free, row, col);
     mu = &mu_function;
     beta = &beta_function;
     gamma = &gamma_function;
 }
 
 template<int dim>
-void CustomOperator<dim>::apply_add(LinearAlgebra::distributed::Vector<double> &dst, const LinearAlgebra::distributed::Vector<double> &src) const
+void CustomOperator<dim>::vmult(VectorType &dst, const VectorType &src) const
 {
 
     FEEvaluation<dim, 1> fe_eval(*(this->data));
