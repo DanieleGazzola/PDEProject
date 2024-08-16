@@ -27,7 +27,6 @@ set(SOURCES
     src/setup.cpp
     src/functions.cpp
     src/operator.cpp
-    src/boundaries.cpp
     main.cpp
 )
 

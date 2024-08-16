@@ -10,7 +10,7 @@
 
 #include <deal.II/grid/grid_generator.h>
 
-#include <deal.II/lac/solver_cg.h>
+#include <deal.II/lac/solver_gmres.h>
 #include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/la_parallel_vector.h>
@@ -24,7 +24,6 @@
 #include <deal.II/numerics/data_out.h>
 
 #include "operator.h"
-#include "boundaries.h"
 #include "setup.h"
 #include "functions.h"
 
@@ -33,9 +32,10 @@ using VectorType = LinearAlgebra::distributed::Vector<double>;
 
 int main()
 {
+
     const unsigned int dim = 2;
     const unsigned int fe_degree = 1;
-    const unsigned int ref_level = 5;
+    const unsigned int ref_level = 7;
 
 // problem setup
     Triangulation<dim> triangulation;
@@ -47,10 +47,16 @@ int main()
 // matrix free setup
     MatrixFree<dim, double> matrix_free;
     CustomOperator<dim> custom_operator;
-    auto matrix_free_ptr = std::make_shared<MatrixFree<dim, double>>(matrix_free);
     MappingQ1<dim> mapping;
     AffineConstraints<double> constraints;
-    constraints.close();  // Normally, you'd add constraints before closing aka boundary conditions
+    MatrixFree<dim, double>::AdditionalData additional_data;
+    additional_data.mapping_update_flags = update_values | update_gradients | update_quadrature_points;
+
+    const types::boundary_id dirichlet_boundary_id = 0;
+    GFunction<dim> g_function;
+    VectorTools::interpolate_boundary_values(dof_handler, dirichlet_boundary_id, g_function, constraints);
+
+    constraints.close();
 
     QGauss<dim> quadrature(fe.degree + 1);
 
@@ -58,7 +64,8 @@ int main()
     BetaFunction<dim> beta_function;
     GammaFunction<dim> gamma_function;
 
-    matrix_free.reinit(mapping, dof_handler, constraints, quadrature);
+    matrix_free.reinit(mapping, dof_handler, constraints, quadrature, additional_data);
+    auto matrix_free_ptr = std::make_shared<MatrixFree<dim, double>>(matrix_free);
     custom_operator.initialize(matrix_free_ptr, mu_function, beta_function, gamma_function);
     LinearOperator<VectorType> lin_op = linear_operator<VectorType>(custom_operator);
 
@@ -70,8 +77,8 @@ int main()
 
     VectorTools::create_right_hand_side(dof_handler, QGauss<dim>(fe.degree + 1), source_function, rhs);
 
-    SolverControl solver_control(1000, 1e-12);
-    SolverCG<VectorType> solver(solver_control);
+    SolverControl solver_control(1000, 1e-10);
+    SolverGMRES<VectorType> solver(solver_control);
 
     solver.solve(lin_op, solution, rhs, PreconditionIdentity());
 

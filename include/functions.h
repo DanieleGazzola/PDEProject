@@ -34,4 +34,11 @@ public:
     virtual double value(const Point<dim> &p, const unsigned int component = 0) const override;
 };
 
+template <int dim>
+class GFunction : public Function<dim>
+{
+public:
+    virtual double value(const Point<dim> &p, const unsigned int component = 0) const override;
+};
+
 #endif // FUNCTIONS_H
