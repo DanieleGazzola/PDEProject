@@ -7,4 +7,4 @@ mkdir build
 cd build
 cmake ..
 make
-./PDEProject.cpp n_iters
+./PDEProject.cpp

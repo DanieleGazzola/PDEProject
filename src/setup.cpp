@@ -3,8 +3,8 @@
 template<int dim>
 void setup_problem(
     Triangulation<dim> &triangulation,
-    FE_Q<dim> &fe,
-    DoFHandler<dim> &dof_handler,
+    FE_Q<dim>          &fe,
+    DoFHandler<dim>    &dof_handler,
     const unsigned int level)
 {
     GridGenerator::hyper_cube(triangulation);
@@ -29,7 +29,6 @@ void setup_problem(
             }
         }
     }
-
 
     dof_handler.reinit(triangulation);
     dof_handler.distribute_dofs(fe);

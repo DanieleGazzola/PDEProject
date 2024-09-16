@@ -2,24 +2,18 @@
 
 #include <deal.II/base/function.h>
 #include <deal.II/base/quadrature_lib.h>
-
 #include <deal.II/dofs/dof_handler.h>
-
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/mapping_q1.h>
-
 #include <deal.II/grid/grid_generator.h>
-
 #include <deal.II/lac/solver_gmres.h>
 #include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/vector.h>
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/lac/linear_operator.h>
 #include <deal.II/lac/precondition.h>
-
 #include <deal.II/matrix_free/matrix_free.h>
 #include <deal.II/matrix_free/operators.h>
-
 #include <deal.II/numerics/vector_tools.h>
 #include <deal.II/numerics/data_out.h>
 
@@ -30,19 +24,24 @@
 using namespace dealii;
 using VectorType = LinearAlgebra::distributed::Vector<double>;
 
-int main()
-{
+int main() {
 
+// problem parameters
     const unsigned int dim = 2;
     const unsigned int fe_degree = 1;
-    const unsigned int ref_level = 7;
+    const unsigned int ref_level = 6;
 
 // problem setup
     Triangulation<dim> triangulation;
     FE_Q<dim> fe(fe_degree);
     DoFHandler<dim> dof_handler;
-
     setup_problem(triangulation, fe, dof_handler, ref_level);
+
+    std::cout << std::endl;
+    std::cout << "Setup completed" << std::endl;
+    std::cout << "Number of active cells: " << triangulation.n_active_cells() << std::endl;
+    std::cout << "Finite element degree: " << fe.degree << std::endl;
+    std::cout << "Number of degrees of freedom: " << dof_handler.n_dofs() << std::endl;
 
 // matrix free setup
     MatrixFree<dim, double> matrix_free;

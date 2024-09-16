@@ -3,28 +3,28 @@
 template <int dim>
 double MuFunction<dim>::value(const Point<dim> & /*p*/, const unsigned int /*component*/) const
 {
-    return 0.01; // -∇·(µ∇u)
+    return 0.1; // -∇·(µ∇u)
 }
 
 template <int dim>
 Tensor<1, dim> BetaFunction<dim>::gradient(const Point<dim> & /*p*/, const unsigned int /*component*/) const
 {
     Tensor<1, dim> beta; // ∇·(βu)
-    beta[0] = 1.0;
-    beta[1] = 0.5;
+    beta[0] = 0.0;
+    beta[1] = 0.0;
     return beta;
 }
 
 template <int dim>
 double GammaFunction<dim>::value(const Point<dim> & /*p*/, const unsigned int /*component*/) const
 {
-    return 1.0; // γu
+    return 0.01; // γu
 }
 
 template <int dim>
 double SourceFunction<dim>::value(const Point<dim> & p, const unsigned int /*component*/) const
 {
-    return 10 * std::exp(-100 * ((p[0] - 0.5) * (p[0] - 0.5) + (p[1] - 0.5) * (p[1] - 0.5))); // f
+    return p[0] * p[1]; // f
 }
 
 template <int dim>
