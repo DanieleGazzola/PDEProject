@@ -18,19 +18,19 @@ Tensor<1, dim> BetaFunction<dim>::gradient(const Point<dim> & /*p*/, const unsig
 template <int dim>
 double GammaFunction<dim>::value(const Point<dim> & /*p*/, const unsigned int /*component*/) const
 {
-    return 0.01; // γu
+    return 0.0; // γu
 }
 
 template <int dim>
 double SourceFunction<dim>::value(const Point<dim> & p, const unsigned int /*component*/) const
 {
-    return p[0] * p[1]; // f
+    return 1000.0 * (1.0 - std::abs(0.5 - p[0])) * (1.0 - std::abs(0.5 - p[1])); // f
 }
 
 template <int dim>
 double GFunction<dim>::value(const Point<dim> & /*p*/, const unsigned int /*component*/) const
 {
-    return 0.0; // g
+    return 0.01; // g
 }
 
 template class MuFunction<2>;

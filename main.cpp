@@ -29,27 +29,24 @@ int main() {
 // problem parameters
     const unsigned int dim = 2;
     const unsigned int fe_degree = 1;
-    const unsigned int ref_level = 6;
+    const unsigned int ref_level = 7;
 
 // problem setup
     Triangulation<dim> triangulation;
     FE_Q<dim> fe(fe_degree);
     DoFHandler<dim> dof_handler;
     setup_problem(triangulation, fe, dof_handler, ref_level);
-
-    std::cout << std::endl;
-    std::cout << "Setup completed" << std::endl;
-    std::cout << "Number of active cells: " << triangulation.n_active_cells() << std::endl;
-    std::cout << "Finite element degree: " << fe.degree << std::endl;
-    std::cout << "Number of degrees of freedom: " << dof_handler.n_dofs() << std::endl;
+    print_dof(dof_handler, "setup.vtk");
 
 // matrix free setup
     MatrixFree<dim, double> matrix_free;
     CustomOperator<dim> custom_operator;
     MappingQ1<dim> mapping;
-    AffineConstraints<double> constraints;
     MatrixFree<dim, double>::AdditionalData additional_data;
     additional_data.mapping_update_flags = update_values | update_gradients | update_quadrature_points;
+
+// bounfdary conditions
+    AffineConstraints<double> constraints;
 
     const types::boundary_id dirichlet_boundary_id = 0;
     GFunction<dim> g_function;
@@ -75,6 +72,7 @@ int main() {
     VectorType solution(matrix_free.get_vector_partitioner());
 
     VectorTools::create_right_hand_side(dof_handler, QGauss<dim>(fe.degree + 1), source_function, rhs);
+    constraints.distribute(rhs);
 
     SolverControl solver_control(1000, 1e-10);
     SolverGMRES<VectorType> solver(solver_control);
@@ -85,6 +83,7 @@ int main() {
     DataOut<dim> data_out;
     data_out.attach_dof_handler(dof_handler);
     data_out.add_data_vector(solution, "solution");
+    data_out.add_data_vector(rhs, "rhs");
     data_out.build_patches();
 
     std::ofstream output("solution.vtk");

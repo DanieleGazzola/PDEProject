@@ -19,7 +19,6 @@ void CustomOperator<dim>::initialize(std::shared_ptr<const MatrixFree<dim, doubl
 template<int dim>
 void CustomOperator<dim>::vmult(VectorType &dst, const VectorType &src) const
 {
-
     FEEvaluation<dim, 1> fe_eval(*(this->data));
 
     for (unsigned int cell = 0; cell < (*(this->data)).n_cell_batches(); ++cell)

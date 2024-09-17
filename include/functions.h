@@ -3,6 +3,7 @@
 
 #include <deal.II/base/function.h>
 #include <deal.II/base/tensor.h>
+#include <math.h>
 
 using namespace dealii;
 
