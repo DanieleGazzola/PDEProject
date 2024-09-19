@@ -2,56 +2,94 @@
 
 using VectorType = LinearAlgebra::distributed::Vector<double>;
 
-template<int dim>
-void CustomOperator<dim>::initialize(std::shared_ptr<const MatrixFree<dim, double>> matrix_free,
-                                     const Function<dim> &mu_function,
-                                     const Function<dim> &beta_function,
-                                     const Function<dim> &gamma_function)
-{
-    const std::vector<unsigned int> row = {};
-    const std::vector<unsigned int> col = {};
-    this->MatrixFreeOperators::Base<dim, VectorType, VectorizedArray<double>>::initialize(matrix_free, row, col);
-    mu = &mu_function;
-    beta = &beta_function;
-    gamma = &gamma_function;
+template<int dim, int fe_degree>
+CustomOperator<dim, fe_degree>::CustomOperator() : MatrixFreeOperators::Base<dim, VectorType>() {
+    this->mu_coefficients.reinit(0, 0);
+    this->beta_coefficients.reinit({0, 0, 0});
+    this->gamma_coefficients.reinit(0, 0);
 }
 
-template<int dim>
-void CustomOperator<dim>::vmult(VectorType &dst, const VectorType &src) const
-{
-    FEEvaluation<dim, 1> fe_eval(*(this->data));
+template<int dim, int fe_degree>
+void CustomOperator<dim, fe_degree>::clear() {
+    mu_coefficients.reinit(0, 0);
+    beta_coefficients.reinit({0, 0, 0});
+    gamma_coefficients.reinit(0, 0);
+    MatrixFreeOperators::Base<dim, VectorType>::clear();
+}
 
-    for (unsigned int cell = 0; cell < (*(this->data)).n_cell_batches(); ++cell)
-    {
-        fe_eval.reinit(cell);
-        fe_eval.read_dof_values(src);
-        fe_eval.evaluate(true, true);
+template<int dim, int fe_degree>
+void CustomOperator<dim, fe_degree>::evaluate_mu(const MuFunction<dim> &mu_function) {
 
-        for (unsigned int q = 0; q < fe_eval.n_q_points; ++q)
-        {
-            dealii::Point<dim, double> qp_scalar;
+    const unsigned int n_cells = this->data->n_cell_batches();
+    FEEvaluation<dim, fe_degree, fe_degree + 1, 1, double> phi(*this->data);
+    mu_coefficients.reinit(n_cells, phi.n_q_points);
 
-            for (unsigned int d = 0; d < dim; ++d)
-                    qp_scalar[d] = fe_eval.quadrature_point(q)[d][0];
-
-            const auto mu_value = mu->value(qp_scalar);
-            const auto beta_value = beta->gradient(qp_scalar);
-            const auto gamma_value = gamma->value(qp_scalar);
-
-            // -∇·(µ∇u)
-            fe_eval.submit_gradient(-mu_value * fe_eval.get_gradient(q), q);
-
-            // ∇·(βu)
-            fe_eval.submit_gradient(beta_value * fe_eval.get_value(q), q);
-
-            // γu
-            fe_eval.submit_value(gamma_value * fe_eval.get_value(q), q);
-        }
-
-        fe_eval.integrate(true, true);
-        fe_eval.distribute_local_to_global(dst);
+    for (unsigned int cell = 0; cell < n_cells; ++cell){
+        phi.reinit(cell);
+        for (unsigned int q = 0; q < phi.n_q_points; ++q)
+            mu_coefficients(cell, q) = mu_function.value(phi.quadrature_point(q));
     }
 }
 
-template class CustomOperator<2>;
-template class CustomOperator<3>;
+template<int dim, int fe_degree>
+void CustomOperator<dim, fe_degree>::evaluate_beta(const BetaFunction<dim> &beta_function) {
+
+    const unsigned int n_cells = this->data->n_cell_batches();
+    FEEvaluation<dim, fe_degree, fe_degree + 1, 1, double> phi(*this->data);
+    beta_coefficients.reinit({n_cells, phi.n_q_points, dim});
+
+    for (unsigned int cell = 0; cell < n_cells; ++cell){
+        phi.reinit(cell);
+        for (unsigned int q = 0; q < phi.n_q_points; ++q) {
+            for (unsigned int d = 0; d < dim; ++d)
+                beta_coefficients(cell, q, d) = beta_function.value(phi.quadrature_point(q), d);
+        }
+    }
+}
+
+template<int dim, int fe_degree>
+void CustomOperator<dim, fe_degree>::evaluate_gamma(const GammaFunction<dim> &gamma_function) {
+
+    const unsigned int n_cells = this->data->n_cell_batches();
+    FEEvaluation<dim, fe_degree, fe_degree + 1, 1, double> phi(*this->data);
+    gamma_coefficients.reinit(n_cells, phi.n_q_points);
+
+    for (unsigned int cell = 0; cell < n_cells; ++cell){
+        phi.reinit(cell);
+        for (unsigned int q = 0; q < phi.n_q_points; ++q)
+            gamma_coefficients(cell, q) = gamma_function.value(phi.quadrature_point(q));
+    }
+}
+
+template<int dim, int fe_degree>
+void CustomOperator<dim, fe_degree>::apply_add(VectorType &dst, const VectorType &src) const {
+    this->data->cell_loop(&CustomOperator::local_apply, this, dst, src);
+}
+
+template<int dim, int fe_degree>
+void CustomOperator<dim, fe_degree>::local_apply(const MatrixFree<dim, double>               &data, 
+                                                 VectorType                                  &dst, 
+                                                 const VectorType                            &src, 
+                                                 const std::pair<unsigned int, unsigned int> &cell_range) const {
+
+    FEEvaluation<dim, fe_degree, fe_degree + 1, 1, double> phi(data);
+
+    for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell) {
+        phi.reinit(cell);
+        phi.read_dof_values(src);
+
+        phi.evaluate(EvaluationFlags::gradients);
+
+        for (unsigned int q = 0; q < phi.n_q_points; ++q)
+            phi.submit_gradient(mu_coefficients(cell, q) * phi.get_gradient(q), q);
+
+        phi.integrate(EvaluationFlags::gradients);
+        phi.distribute_local_to_global(dst);
+    }
+}
+
+template<int dim, int fe_degree>
+void CustomOperator<dim, fe_degree>::compute_diagonal() {}
+
+template class CustomOperator<2, 1>;
+template class CustomOperator<3, 1>;

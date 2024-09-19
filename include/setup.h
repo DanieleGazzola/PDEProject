@@ -20,9 +20,4 @@ void setup_problem(
     DoFHandler<dim>    &dof_handler,
     const unsigned int level);
 
-template<int dim>
-void print_dof(
-    DoFHandler<dim> &dof_handler,
-    std::string     filename);
-
 #endif // SETUP_H
