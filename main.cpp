@@ -65,7 +65,6 @@ int main() {
     custom_operator.initialize_dof_vector(rhs);
 
 //assemble rhs
-
     SourceFunction<dim> source_function;
     rhs = 0;
     FEEvaluation<dim, fe_degree> phi(*custom_operator.get_matrix_free());
@@ -79,15 +78,14 @@ int main() {
         phi.distribute_local_to_global(rhs);
       }
     rhs.compress(VectorOperation::add);
+    constraints.distribute(rhs);
 
 
 // solve system
-
     SolverControl solver_control(1000, 1e-12);
     SolverCG<VectorType> solver(solver_control);
 
-    constraints.set_zero(solution);
-
+    constraints.distribute(solution);
     solver.solve(custom_operator, solution, rhs, PreconditionIdentity());
     constraints.distribute(solution);
 

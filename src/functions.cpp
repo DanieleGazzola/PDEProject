@@ -10,7 +10,7 @@ template <int dim>
 template <typename number>
 number MuFunction<dim>::value(const Point<dim, number> & /*p*/, const unsigned int /*component*/) const
 {
-    return 0.1; // -∇·(µ∇u)
+    return 0.01; // -∇·(µ∇u)
 }
 
 template <int dim>
@@ -24,7 +24,7 @@ template <typename number>
 number BetaFunction<dim>::value(const Point<dim, number> & /*p*/, const unsigned int component) const
 {
     if(component == 0) // ∇·(βu)
-        return 0.0;
+        return 1.0;
     else
         return 0.0;
 }
@@ -39,7 +39,7 @@ template <int dim>
 template <typename number>
 number GammaFunction<dim>::value(const Point<dim, number> & /*p*/, const unsigned int /*component*/) const
 {
-    return 0.0; // γu
+    return 0.1; // γu
 }
 
 template <int dim>
@@ -52,13 +52,13 @@ template <int dim>
 template <typename number>
 number SourceFunction<dim>::value(const Point<dim, number> & p, const unsigned int /*component*/) const
 {
-    return p[0] * p[1]; // f
+    return (1.0 - p[0]) * (1.0 - p[1]); // f
 }
 
 template <int dim>
 double GFunction<dim>::value(const Point<dim> & /*p*/, const unsigned int /*component*/) const
 {
-    return 0.0; // g
+    return 1.0; // g
 }
 
 template class MuFunction<2>;

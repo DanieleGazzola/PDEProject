@@ -22,9 +22,11 @@ void setup_problem(
                     if (std::abs(cell->face(f)->center()[0] - 0.0) < 1e-12)
                         cell->face(f)->set_boundary_id(0); // Left boundary -> g
                     else if (std::abs(cell->face(f)->center()[1] - 0.0) < 1e-12)
-                        cell->face(f)->set_boundary_id(0); // Bottom boundary -> g
-                    else
-                        cell->face(f)->set_boundary_id(0); // Other boundaries -> h TODO
+                        cell->face(f)->set_boundary_id(1); // Bottom boundary -> h
+                    else if (std::abs(cell->face(f)->center()[0] - 1.0) < 1e-12)
+                        cell->face(f)->set_boundary_id(1); // Right boundary -> h
+                    else if (std::abs(cell->face(f)->center()[1] - 1.0) < 1e-12)
+                        cell->face(f)->set_boundary_id(1); // Top boundary -> h
                 }
             }
         }

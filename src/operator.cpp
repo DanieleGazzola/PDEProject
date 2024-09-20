@@ -78,12 +78,17 @@ void CustomOperator<dim, fe_degree>::local_apply(const MatrixFree<dim, double>  
         phi.reinit(cell);
         phi.read_dof_values(src);
 
-        phi.evaluate(EvaluationFlags::gradients);
+        phi.evaluate(EvaluationFlags::values | EvaluationFlags::gradients);
 
-        for (unsigned int q = 0; q < phi.n_q_points; ++q)
+        for (unsigned int q = 0; q < phi.n_q_points; ++q) {
             phi.submit_gradient(mu_coefficients(cell, q) * phi.get_gradient(q), q);
+            VectorizedArray<double, 2> sum = 0;
+            for (unsigned int d = 0; d < dim; ++d)
+                sum += beta_coefficients(cell, q, d) * phi.get_gradient(q)[d];
+            phi.submit_value((gamma_coefficients(cell, q) - sum) * phi.get_value(q), q);
+        }
 
-        phi.integrate(EvaluationFlags::gradients);
+        phi.integrate(EvaluationFlags::values | EvaluationFlags::gradients);
         phi.distribute_local_to_global(dst);
     }
 }
