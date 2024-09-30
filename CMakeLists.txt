@@ -20,6 +20,7 @@ find_package(deal.II 9.3.1 REQUIRED
 deal_ii_initialize_cached_variables()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wfloat-conversion -Wmissing-braces -Wnon-virtual-dtor")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -ftree-vectorize")
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 

@@ -30,7 +30,7 @@ using VectorType = LinearAlgebra::distributed::Vector<double>;
 template <int dim, int fe_degree, int ref_level>
 void run_simulation_matrix_free(ConditionalOStream &pcout){
 
-    const unsigned int mpi_rank = Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
+    const unsigned int mpi_size = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
 
     parallel::fullydistributed::Triangulation<dim> mesh(MPI_COMM_WORLD);
     FE_Q<dim> fe(fe_degree);
@@ -117,6 +117,7 @@ void run_simulation_matrix_free(ConditionalOStream &pcout){
     const auto end_time = std::chrono::high_resolution_clock::now();
 
     solution.update_ghost_values();
+    rhs.update_ghost_values();
 
     DataOut<dim> data_out;
     data_out.attach_dof_handler(dof_handler);
@@ -124,7 +125,7 @@ void run_simulation_matrix_free(ConditionalOStream &pcout){
     data_out.add_data_vector(rhs, "rhs");
     data_out.build_patches(mapping);
 
-    data_out.write_vtu_with_pvtu_record("./", "solution", mpi_rank, MPI_COMM_WORLD, 5);
+    data_out.write_vtu_with_pvtu_record("./", "solution" + std::to_string(mpi_size), 0, MPI_COMM_WORLD, 5);
 
     pcout << "Setup time: " << std::chrono::duration_cast<std::chrono::milliseconds>(setup_time - start_time).count() << " ms" << std::endl;
     pcout << "RHS assembly time: " << std::chrono::duration_cast<std::chrono::milliseconds>(rhs_time - setup_time).count() << " ms" << std::endl;
@@ -134,26 +135,30 @@ void run_simulation_matrix_free(ConditionalOStream &pcout){
 
 template <int dim, int fe_degree, int ref_level>
 void run_simulation_classic(ConditionalOStream & /*pcout*/){
-    
 
     return;
 }
 
 int main(int argc, char *argv[]){
 
-    const unsigned int dim       = 2;
+    const unsigned int dim       = 3;
     const unsigned int fe_degree = 1;
-    const unsigned int ref_level = 6;
+    const unsigned int ref_level = 5;
 
     Utilities::MPI::MPI_InitFinalize mpi_init(argc, argv, 1);
+    const unsigned int mpi_size = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
     const unsigned int mpi_rank = Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
     ConditionalOStream pcout(std::cout, mpi_rank == 0);
 
-    pcout << "Running matrix-free simulation" << std::endl;
+    pcout << "Running with vectorization on " << VectorizedArray<double>::size() << " cells(" << Utilities::System::get_current_vectorization_level() << ")" << std::endl;
+
+    pcout << "Running matrix-free simulation with " << mpi_size << " processors" << std::endl;
     run_simulation_matrix_free<dim, fe_degree, ref_level>(pcout);
 
     pcout << "Running classic simulation" << std::endl;
     run_simulation_classic<dim, fe_degree, ref_level>(pcout);
+
+    pcout << std::endl;
 
     return 0;
 }
