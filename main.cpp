@@ -37,7 +37,7 @@ void run_simulation_matrix_free(ConditionalOStream &pcout){
     DoFHandler<dim> dof_handler;
     MappingQ1<dim> mapping;
     QGauss<dim> quad(fe.degree + 1);
-    IndexSet locally_owned_dofs;
+    IndexSet locally_dofs;
     AffineConstraints<double> constraints;
     CustomOperator<dim, fe_degree> custom_operator;
     VectorType rhs;
@@ -47,21 +47,19 @@ void run_simulation_matrix_free(ConditionalOStream &pcout){
 
     custom_operator.clear();
     setup_problem(mesh, fe, dof_handler, ref_level);
-    locally_owned_dofs = dof_handler.locally_owned_dofs();
 
     constraints.clear();
+    DoFTools::extract_locally_relevant_dofs(dof_handler, locally_dofs);
+    constraints.reinit(locally_dofs);
     const types::boundary_id dirichlet_boundary_id = 0;
     GFunction<dim> g_function;
     VectorTools::interpolate_boundary_values(dof_handler, dirichlet_boundary_id, g_function, constraints);
     constraints.close();
 
-/*
     typename MatrixFree<dim, double>::AdditionalData additional_data;
     additional_data.mapping_update_flags = (update_values | update_gradients | update_JxW_values | update_quadrature_points);
     additional_data.mapping_update_flags_boundary_faces = (update_values | update_JxW_values | update_quadrature_points);
-    additional_data.mapping_update_flags_inner_faces = (update_values | update_JxW_values | update_quadrature_points);
     additional_data.mapping_update_flags_faces_by_cells  = (update_values | update_JxW_values | update_quadrature_points);
-    additional_data.hold_all_faces_to_owned_cells = true;
 
     std::shared_ptr<MatrixFree<dim, double>> matrix_free_ptr(new MatrixFree<dim, double>());
 
@@ -92,7 +90,7 @@ void run_simulation_matrix_free(ConditionalOStream &pcout){
         phi.integrate(EvaluationFlags::values);
         phi.distribute_local_to_global(rhs);
     }
-
+/*
     for (unsigned int cell = 0; cell < custom_operator.get_matrix_free()->n_cell_batches(); ++cell){
         for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face){
             phi_face.reinit(cell, face);
@@ -104,7 +102,7 @@ void run_simulation_matrix_free(ConditionalOStream &pcout){
             }
         }
     }
-  
+*/
     rhs.compress(VectorOperation::add);
     constraints.distribute(rhs);
 
@@ -118,19 +116,20 @@ void run_simulation_matrix_free(ConditionalOStream &pcout){
 
     const auto end_time = std::chrono::high_resolution_clock::now();
 
+    solution.update_ghost_values();
+
     DataOut<dim> data_out;
     data_out.attach_dof_handler(dof_handler);
     data_out.add_data_vector(solution, "solution");
     data_out.add_data_vector(rhs, "rhs");
     data_out.build_patches(mapping);
 
-    std::ofstream output("solution.vtk");
-    data_out.write_vtk(output);
+    data_out.write_vtu_with_pvtu_record("./", "solution", mpi_rank, MPI_COMM_WORLD, 5);
 
     pcout << "Setup time: " << std::chrono::duration_cast<std::chrono::milliseconds>(setup_time - start_time).count() << " ms" << std::endl;
     pcout << "RHS assembly time: " << std::chrono::duration_cast<std::chrono::milliseconds>(rhs_time - setup_time).count() << " ms" << std::endl;
     pcout << "Solve time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - rhs_time).count() << " ms" << std::endl;
-*/
+
 }
 
 template <int dim, int fe_degree, int ref_level>
@@ -146,7 +145,7 @@ int main(int argc, char *argv[]){
     const unsigned int fe_degree = 1;
     const unsigned int ref_level = 6;
 
-    Utilities::MPI::MPI_InitFinalize mpi_init(argc, argv);
+    Utilities::MPI::MPI_InitFinalize mpi_init(argc, argv, 1);
     const unsigned int mpi_rank = Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
     ConditionalOStream pcout(std::cout, mpi_rank == 0);
 
