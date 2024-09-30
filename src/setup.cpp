@@ -2,15 +2,16 @@
 
 template<int dim>
 void setup_problem(
-    Triangulation<dim> &triangulation,
-    FE_Q<dim>          &fe,
-    DoFHandler<dim>    &dof_handler,
-    const unsigned int level)
+    parallel::fullydistributed::Triangulation<dim> &mesh,
+    FE_Q<dim>                                      &fe,
+    DoFHandler<dim>                                &dof_handler,
+    const unsigned int                              level)
 {
+    Triangulation<dim> triangulation;
+
     GridGenerator::hyper_cube(triangulation);
     triangulation.refine_global(level);
 
-    // dim = 2
     for (auto &cell : triangulation.active_cell_iterators())
     {
         if (cell->at_boundary())
@@ -19,22 +20,36 @@ void setup_problem(
             {
                 if (cell->face(f)->at_boundary()) 
                 {
-                    if (std::abs(cell->face(f)->center()[0] - 0.0) < 1e-12)
-                        cell->face(f)->set_boundary_id(0); // Left boundary -> g
-                    else if (std::abs(cell->face(f)->center()[1] - 0.0) < 1e-12)
-                        cell->face(f)->set_boundary_id(1); // Bottom boundary -> h
-                    else if (std::abs(cell->face(f)->center()[0] - 1.0) < 1e-12)
-                        cell->face(f)->set_boundary_id(1); // Right boundary -> h
-                    else if (std::abs(cell->face(f)->center()[1] - 1.0) < 1e-12)
-                        cell->face(f)->set_boundary_id(1); // Top boundary -> h
+                    auto center = cell->face(f)->center();
+
+                    if (std::abs(center[0]) < 1e-12)
+                        cell->face(f)->set_boundary_id(0);     // Left boundary ---> g
+                    else if (std::abs(center[0] - 1.0) < 1e-12)
+                        cell->face(f)->set_boundary_id(1);     // Right boundary --> h
+                    else if (std::abs(center[1]) < 1e-12)
+                        cell->face(f)->set_boundary_id(1);     // Bottom boundary -> h
+                    else if (std::abs(center[1] - 1.0) < 1e-12)
+                        cell->face(f)->set_boundary_id(1);     // Top boundary ----> h
+
+                    if constexpr (dim == 3)
+                    {
+                        if (std::abs(center[2]) < 1e-12)
+                            cell->face(f)->set_boundary_id(1); // Front boundary --> h
+                        else if (std::abs(center[2] - 1.0) < 1e-12)
+                            cell->face(f)->set_boundary_id(1); // Back boundary ---> h
+                    }
                 }
             }
         }
     }
+    const unsigned int mpi_size = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+    GridTools::partition_triangulation(mpi_size, triangulation);
+    const auto construction_data = TriangulationDescription::Utilities::create_description_from_triangulation(triangulation, MPI_COMM_WORLD);
+    mesh.create_triangulation(construction_data);
 
-    dof_handler.reinit(triangulation);
+    dof_handler.reinit(mesh);
     dof_handler.distribute_dofs(fe);
 }
 
-template void setup_problem<2>(Triangulation<2> &, FE_Q<2> &, DoFHandler<2> &, const unsigned int);
-template void setup_problem<3>(Triangulation<3> &, FE_Q<3> &, DoFHandler<3> &, const unsigned int);
+template void setup_problem<2>(parallel::fullydistributed::Triangulation<2> &, FE_Q<2> &, DoFHandler<2> &, const unsigned int);
+template void setup_problem<3>(parallel::fullydistributed::Triangulation<3> &, FE_Q<3> &, DoFHandler<3> &, const unsigned int);

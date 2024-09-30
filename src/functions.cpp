@@ -26,7 +26,7 @@ number BetaFunction<dim>::value(const Point<dim, number> & /*p*/, const unsigned
     if(component == 0) // ∇·(βu)
         return 1.0;
     else
-        return 0.0;
+        return 0.5;
 }
 
 template <int dim>
@@ -61,6 +61,19 @@ double GFunction<dim>::value(const Point<dim> & /*p*/, const unsigned int /*comp
     return 1.0; // g
 }
 
+template <int dim>
+double HFunction<dim>::value(const Point<dim> & p, const unsigned int component) const
+{
+    return value<double>(p, component);
+}
+
+template <int dim>
+template <typename number>
+number HFunction<dim>::value(const Point<dim, number> & /*p*/, const unsigned int /*component*/) const
+{
+    return 0.01; // h
+}
+
 template class MuFunction<2>;
 template class MuFunction<3>;
 template class BetaFunction<2>;
@@ -71,12 +84,16 @@ template class SourceFunction<2>;
 template class SourceFunction<3>;
 template class GFunction<2>;
 template class GFunction<3>;
+template class HFunction<2>;
+template class HFunction<3>;
 
 template dealii::VectorizedArray<double, 2ul> MuFunction<2>::value<dealii::VectorizedArray<double, 2ul>>(const dealii::Point<2, dealii::VectorizedArray<double, 2ul>> &, const unsigned int) const;
 template dealii::VectorizedArray<double, 2ul> BetaFunction<2>::value<dealii::VectorizedArray<double, 2ul>>(const dealii::Point<2, dealii::VectorizedArray<double, 2ul>> &, const unsigned int) const;
 template dealii::VectorizedArray<double, 2ul> GammaFunction<2>::value<dealii::VectorizedArray<double, 2ul>>(const dealii::Point<2, dealii::VectorizedArray<double, 2ul>> &, const unsigned int) const;
 template dealii::VectorizedArray<double, 2ul> SourceFunction<2>::value<dealii::VectorizedArray<double, 2ul>>(const dealii::Point<2, dealii::VectorizedArray<double, 2ul>> &, const unsigned int) const;
+template dealii::VectorizedArray<double, 2ul> HFunction<2>::value<dealii::VectorizedArray<double, 2ul>>(const dealii::Point<2, dealii::VectorizedArray<double, 2ul>> &, const unsigned int) const;
 template dealii::VectorizedArray<double, 2ul> MuFunction<3>::value<dealii::VectorizedArray<double, 2ul>>(const dealii::Point<3, dealii::VectorizedArray<double, 2ul>> &, const unsigned int) const;
 template dealii::VectorizedArray<double, 2ul> BetaFunction<3>::value<dealii::VectorizedArray<double, 2ul>>(const dealii::Point<3, dealii::VectorizedArray<double, 2ul>> &, const unsigned int) const;
 template dealii::VectorizedArray<double, 2ul> GammaFunction<3>::value<dealii::VectorizedArray<double, 2ul>>(const dealii::Point<3, dealii::VectorizedArray<double, 2ul>> &, const unsigned int) const;
 template dealii::VectorizedArray<double, 2ul> SourceFunction<3>::value<dealii::VectorizedArray<double, 2ul>>(const dealii::Point<3, dealii::VectorizedArray<double, 2ul>> &, const unsigned int) const;
+template dealii::VectorizedArray<double, 2ul> HFunction<3>::value<dealii::VectorizedArray<double, 2ul>>(const dealii::Point<3, dealii::VectorizedArray<double, 2ul>> &, const unsigned int) const;
