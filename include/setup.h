@@ -1,7 +1,7 @@
 #ifndef SETUP_H
 #define SETUP_H
 
-#include <deal.II/distributed/fully_distributed_tria.h>
+#include <deal.II/distributed/tria.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/grid/tria.h>
@@ -11,7 +11,7 @@ using namespace dealii;
 
 template<int dim>
 void setup_problem(
-    parallel::fullydistributed::Triangulation<dim> &mesh,
+    parallel::distributed::Triangulation<dim> &mesh,
     FE_Q<dim>                                      &fe,
     DoFHandler<dim>                                &dof_handler,
     const unsigned int                             level

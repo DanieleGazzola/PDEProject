@@ -2,17 +2,16 @@
 
 template<int dim>
 void setup_problem(
-    parallel::fullydistributed::Triangulation<dim> &mesh,
-    FE_Q<dim>                                      &fe,
-    DoFHandler<dim>                                &dof_handler,
-    const unsigned int                              level)
+    parallel::distributed::Triangulation<dim> &mesh,
+    FE_Q<dim>                                 &fe,
+    DoFHandler<dim>                           &dof_handler,
+    const unsigned int                         level)
 {
-    Triangulation<dim> triangulation;
 
-    GridGenerator::hyper_cube(triangulation);
-    triangulation.refine_global(level);
+    GridGenerator::hyper_cube(mesh);
+    mesh.refine_global(level);
 
-    for (auto &cell : triangulation.active_cell_iterators())
+    for (auto &cell : mesh.active_cell_iterators())
     {
         if (cell->at_boundary())
         {
@@ -42,14 +41,10 @@ void setup_problem(
             }
         }
     }
-    const unsigned int mpi_size = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
-    GridTools::partition_triangulation(mpi_size, triangulation);
-    const auto construction_data = TriangulationDescription::Utilities::create_description_from_triangulation(triangulation, MPI_COMM_WORLD);
-    mesh.create_triangulation(construction_data);
 
     dof_handler.reinit(mesh);
     dof_handler.distribute_dofs(fe);
 }
 
-template void setup_problem<2>(parallel::fullydistributed::Triangulation<2> &, FE_Q<2> &, DoFHandler<2> &, const unsigned int);
-template void setup_problem<3>(parallel::fullydistributed::Triangulation<3> &, FE_Q<3> &, DoFHandler<3> &, const unsigned int);
+template void setup_problem<2>(parallel::distributed::Triangulation<2> &, FE_Q<2> &, DoFHandler<2> &, const unsigned int);
+template void setup_problem<3>(parallel::distributed::Triangulation<3> &, FE_Q<3> &, DoFHandler<3> &, const unsigned int);

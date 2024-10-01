@@ -18,7 +18,7 @@
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/mpi.h>
-#include <deal.II/distributed/fully_distributed_tria.h>
+#include <deal.II/distributed/tria.h>
 
 #include "operator.h"
 #include "setup.h"
@@ -32,7 +32,7 @@ void run_simulation_matrix_free(ConditionalOStream &pcout){
 
     const unsigned int mpi_size = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
 
-    parallel::fullydistributed::Triangulation<dim> mesh(MPI_COMM_WORLD);
+    parallel::distributed::Triangulation<dim> mesh(MPI_COMM_WORLD);
     FE_Q<dim> fe(fe_degree);
     DoFHandler<dim> dof_handler;
     MappingQ1<dim> mapping;
@@ -141,9 +141,9 @@ void run_simulation_classic(ConditionalOStream & /*pcout*/){
 
 int main(int argc, char *argv[]){
 
-    const unsigned int dim       = 3;
+    const unsigned int dim       = 2;
     const unsigned int fe_degree = 1;
-    const unsigned int ref_level = 5;
+    const unsigned int ref_level = 6;
 
     Utilities::MPI::MPI_InitFinalize mpi_init(argc, argv, 1);
     const unsigned int mpi_size = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
