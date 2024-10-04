@@ -76,11 +76,11 @@ void run_simulation_matrix_free(ConditionalOStream &pcout){
 
     SourceFunction<dim> source_function;
     HFunction<dim> h_function;
-    //const types::boundary_id neumann_boundary_id = 1;
+    const types::boundary_id neumann_boundary_id = 1;
 
     rhs = 0;
     FEEvaluation<dim, fe_degree> phi(*custom_operator.get_matrix_free());
-    FEFaceEvaluation<dim, fe_degree> phi_face(*custom_operator.get_matrix_free());
+    FEFaceEvaluation<dim, fe_degree> phi_face(*custom_operator.get_matrix_free(), true, 0, 0, 0, 0, 0, 0);
 
     for (unsigned int cell = 0; cell < custom_operator.get_matrix_free()->n_cell_batches(); ++cell)
     {
@@ -90,19 +90,21 @@ void run_simulation_matrix_free(ConditionalOStream &pcout){
         phi.integrate(EvaluationFlags::values);
         phi.distribute_local_to_global(rhs);
     }
-/*
-    for (unsigned int cell = 0; cell < custom_operator.get_matrix_free()->n_cell_batches(); ++cell){
-        for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face){
-            phi_face.reinit(cell, face);
-            if (phi_face.at_boundary() && phi_face.boundary_id() == neumann_boundary_id){
-                for (unsigned int q = 0; q < phi_face.n_q_points; ++q)
-                    phi_face.submit_value(h_function.value(phi_face.quadrature_point(q)), q);
-                phi_face.integrate(EvaluationFlags::values);
-                phi_face.distribute_local_to_global(rhs);
-            }
+
+    for (unsigned int face = 0; face < custom_operator.get_matrix_free()->n_boundary_face_batches(); ++face)
+    {
+        phi_face.reinit(face);
+
+        if (phi_face.boundary_id() == neumann_boundary_id)
+        {
+            for (unsigned int q = 0; q < phi_face.n_q_points; ++q)
+                phi_face.submit_value(h_function.value(phi_face.quadrature_point(q)), q);
+
+            phi_face.integrate(EvaluationFlags::values);
+            phi_face.distribute_local_to_global(rhs);
         }
     }
-*/
+
     rhs.compress(VectorOperation::add);
     constraints.distribute(rhs);
 
@@ -143,7 +145,7 @@ int main(int argc, char *argv[]){
 
     const unsigned int dim       = 2;
     const unsigned int fe_degree = 1;
-    const unsigned int ref_level = 6;
+    const unsigned int ref_level = 5;
 
     Utilities::MPI::MPI_InitFinalize mpi_init(argc, argv, 1);
     const unsigned int mpi_size = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
