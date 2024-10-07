@@ -10,6 +10,7 @@
 #include <deal.II/matrix_free/matrix_free.h>
 #include <deal.II/matrix_free/operators.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/lac/affine_constraints.h>
 
 #include "functions.h"
 
@@ -21,7 +22,7 @@ class CustomOperator : public MatrixFreeOperators::Base<dim, VectorType>
 {
 public:
 
-    CustomOperator();
+    CustomOperator(const AffineConstraints<double> &constraints);
 
     void clear() override;
 
@@ -49,6 +50,7 @@ private:
     Table<3, VectorizedArray<double>> beta_coefficients;
     Table<2, VectorizedArray<double>> gamma_coefficients;
 
+    const AffineConstraints<double> *constraints_ptr;
 };
 
 #endif // OPERATOR_H

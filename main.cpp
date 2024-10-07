@@ -39,13 +39,11 @@ void run_simulation_matrix_free(ConditionalOStream &pcout){
     QGauss<dim> quad(fe.degree + 1);
     IndexSet locally_dofs;
     AffineConstraints<double> constraints;
-    CustomOperator<dim, fe_degree> custom_operator;
     VectorType rhs;
     VectorType solution;
 
     const auto start_time = std::chrono::high_resolution_clock::now();
 
-    custom_operator.clear();
     setup_problem(mesh, fe, dof_handler, ref_level);
 
     constraints.clear();
@@ -55,6 +53,8 @@ void run_simulation_matrix_free(ConditionalOStream &pcout){
     GFunction<dim> g_function;
     VectorTools::interpolate_boundary_values(dof_handler, dirichlet_boundary_id, g_function, constraints);
     constraints.close();
+    
+    CustomOperator<dim, fe_degree> custom_operator(constraints);
 
     typename MatrixFree<dim, double>::AdditionalData additional_data;
     additional_data.mapping_update_flags = (update_values | update_gradients | update_JxW_values | update_quadrature_points);
@@ -106,14 +106,16 @@ void run_simulation_matrix_free(ConditionalOStream &pcout){
     }
 
     rhs.compress(VectorOperation::add);
+    rhs.update_ghost_values();
     constraints.distribute(rhs);
 
     const auto rhs_time = std::chrono::high_resolution_clock::now();
 
-    SolverControl solver_control(100000, 1e-12);
+    SolverControl solver_control(1000, 1e-12);
     SolverCG<VectorType> solver(solver_control);
 
     solver.solve(custom_operator, solution, rhs, PreconditionIdentity());
+    solution.update_ghost_values();
     constraints.distribute(solution);
 
     const auto end_time = std::chrono::high_resolution_clock::now();
