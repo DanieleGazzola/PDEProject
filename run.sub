@@ -1,0 +1,26 @@
+#!/bin/bash
+#PBS -S /bin/bash
+
+#PBS -l nodes=1:ppn=10,walltime=12:00:00 -q gigat
+#PBS -N matrix_free
+
+source ~/.bashrc
+
+# Load the modules that you need:
+module load gcc-glibc/11.2.0
+module load dealii/9.5.1
+
+current_dir="/u/archive/laureandi1/derosso/PDEProject/build"
+mkdir -p "$current_dir"
+cd "$current_dir"
+
+# Compile
+cmake ..
+make
+
+# Create the machinefile to be passed to mpirun.
+sort "${PBS_NODEFILE}" | uniq -c | awk '{printf("%s\n", $2);}' > mpd.nodes
+
+# Actually run the simulation. The arguments to -n and -npernode should
+# be consistent with the resources requested at the top of the script.
+mpirun -machinefile mpd.nodes -n 10 -npernode 10 ./PDEProject &> "$current_dir/stdout.txt"
