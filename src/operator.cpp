@@ -77,28 +77,20 @@ void CustomOperator<dim, fe_degree>::local_apply(const MatrixFree<dim, double>  
 
     for (unsigned int cell_batch = cell_range.first; cell_batch < cell_range.second; ++cell_batch) {
         phi.reinit(cell_batch);
+        phi.read_dof_values_plain(src);
 
-        for (unsigned int lane = 0; lane < phi.n_lanes; ++lane) {
-            typename DoFHandler<dim>::cell_iterator cell_iterator = data.get_cell_iterator(cell_batch, lane);
+        phi.evaluate(EvaluationFlags::values | EvaluationFlags::gradients);
 
-            if (!cell_iterator->is_locally_owned())
-                continue;
+        for (unsigned int q = 0; q < phi.n_q_points; ++q) {
+            phi.submit_gradient(mu_coefficients(cell_batch, q) * phi.get_gradient(q), q);
 
-            phi.read_dof_values_plain(src);
+            VectorizedArray<double> sum = 0;
+            for (unsigned int d = 0; d < dim; ++d)
+                sum += beta_coefficients(cell_batch, q, d) * phi.get_gradient(q)[d];
 
-            phi.evaluate(EvaluationFlags::values | EvaluationFlags::gradients);
-
-            for (unsigned int q = 0; q < phi.n_q_points; ++q) {
-                phi.submit_gradient(mu_coefficients(cell_batch, q) * phi.get_gradient(q), q);
-
-                VectorizedArray<double> sum = 0;
-                for (unsigned int d = 0; d < dim; ++d)
-                    sum += beta_coefficients(cell_batch, q, d) * phi.get_gradient(q)[d];
-
-                phi.submit_value(gamma_coefficients(cell_batch, q) * phi.get_value(q) - sum, q);
-            }
-            phi.integrate(EvaluationFlags::values | EvaluationFlags::gradients);
+            phi.submit_value(gamma_coefficients(cell_batch, q) * phi.get_value(q) - sum, q);
         }
+        phi.integrate(EvaluationFlags::values | EvaluationFlags::gradients);
         phi.distribute_local_to_global(dst);
     }
 }

@@ -173,7 +173,7 @@ void Problem<dim, fe_degree>::output() const
     data_out.add_data_vector(system_rhs, "rhs");
     data_out.build_patches();
 
-    data_out.write_vtu_with_pvtu_record("../solution", "solution_classic" + std::to_string(mpi_size), 0, MPI_COMM_WORLD, 5);
+    data_out.write_vtu_with_pvtu_record("./", "solution_classic" + std::to_string(mpi_size), 0, MPI_COMM_WORLD, 5);
 }
 
 template class Problem<2, 1>;
