@@ -10,9 +10,18 @@ source ~/.bashrc
 module load gcc-glibc/11.2.0
 module load dealii/9.5.1
 
+# Clean previous simulation
+current_dir="/u/archive/laureandi1/derosso/PDEProject/solution"
+rm -rf "$current_dir"
+mkdir -p "$current_dir"
+
+# Clean previous build
 current_dir="/u/archive/laureandi1/derosso/PDEProject/build"
+rm -rf "$current_dir"
 mkdir -p "$current_dir"
 cd "$current_dir"
+
+
 
 # Compile
 cmake ..

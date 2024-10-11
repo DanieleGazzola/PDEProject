@@ -129,7 +129,7 @@ void run_simulation_matrix_free(ConditionalOStream &pcout){
     data_out.add_data_vector(rhs, "rhs");
     data_out.build_patches(mapping);
 
-    data_out.write_vtu_with_pvtu_record("./", "solution" + std::to_string(mpi_size), 0, MPI_COMM_WORLD, 5);
+    data_out.write_vtu_with_pvtu_record("../solution", "solution" + std::to_string(mpi_size), 0, MPI_COMM_WORLD, 5);
 
     pcout << "N-iterations: " << solver_control.last_step() << std::endl;
     pcout << "Setup time: " << std::chrono::duration_cast<std::chrono::milliseconds>(setup_time - start_time).count() << " ms" << std::endl;
