@@ -43,8 +43,6 @@ void run_simulation_matrix_free(ConditionalOStream &pcout){
     VectorType rhs = 0.0;
     VectorType solution = 0.0;
 
-    const auto start_time = std::chrono::high_resolution_clock::now();
-
     setup_problem(mesh, fe, dof_handler, ref_level);
 
     constraints.clear();
@@ -72,8 +70,6 @@ void run_simulation_matrix_free(ConditionalOStream &pcout){
     custom_operator.evaluate_gamma(GammaFunction<dim>());
     custom_operator.initialize_dof_vector(solution);
     custom_operator.initialize_dof_vector(rhs);
-
-    const auto setup_time = std::chrono::high_resolution_clock::now();
 
     SourceFunction<dim> source_function;
     HFunction<dim> h_function;
@@ -110,14 +106,10 @@ void run_simulation_matrix_free(ConditionalOStream &pcout){
     rhs.update_ghost_values();
     constraints.distribute(rhs);
 
-    const auto rhs_time = std::chrono::high_resolution_clock::now();
-
     SolverControl solver_control(10000, 1e-12);
     SolverGMRES<VectorType> solver(solver_control);
 
     solver.solve(custom_operator, solution, rhs, PreconditionIdentity());
-
-    const auto end_time = std::chrono::high_resolution_clock::now();
 
     constraints.distribute(solution);
     solution.update_ghost_values();
@@ -132,29 +124,18 @@ void run_simulation_matrix_free(ConditionalOStream &pcout){
     data_out.write_vtu_with_pvtu_record("./", "solution" + std::to_string(mpi_size), 0, MPI_COMM_WORLD, 5);
 
     pcout << "N-iterations: " << solver_control.last_step() << std::endl;
-    pcout << "Setup time: " << std::chrono::duration_cast<std::chrono::milliseconds>(setup_time - start_time).count() << " ms" << std::endl;
-    pcout << "RHS assembly time: " << std::chrono::duration_cast<std::chrono::milliseconds>(rhs_time - setup_time).count() << " ms" << std::endl;
-    pcout << "Solve time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - rhs_time).count() << " ms" << std::endl;
 
 }
 
 template <int dim, int fe_degree, int ref_level>
-void run_simulation_classic(ConditionalOStream & pcout){
+void run_simulation_classic(){
 
     Problem<dim, fe_degree> problem;
     
-    const auto start_time = std::chrono::high_resolution_clock::now();
     problem.setup(ref_level);
-    const auto setup_time = std::chrono::high_resolution_clock::now();
     problem.assemble();
-    const auto assemble_time = std::chrono::high_resolution_clock::now();
     problem.solve();
-    const auto end_time = std::chrono::high_resolution_clock::now();
     problem.output();
-
-    pcout << "Setup time: " << std::chrono::duration_cast<std::chrono::milliseconds>(setup_time - start_time).count() << " ms" << std::endl;
-    pcout << "Matrix-RHS assembly time: " << std::chrono::duration_cast<std::chrono::milliseconds>(assemble_time - setup_time).count() << " ms" << std::endl;
-    pcout << "Solve time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - assemble_time).count() << " ms" << std::endl;
 
     return;
 }
@@ -163,7 +144,7 @@ int main(int argc, char *argv[]){
 
     const unsigned int dim       = 3;
     const unsigned int fe_degree = 1;
-    const unsigned int ref_level = 5;
+    const unsigned int ref_level = 6;
 
     Utilities::MPI::MPI_InitFinalize mpi_init(argc, argv);
     const unsigned int mpi_size = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
@@ -174,11 +155,17 @@ int main(int argc, char *argv[]){
     pcout << std::endl;
 
     pcout << "Running matrix-free simulation with " << mpi_size << " processors" << std::endl;
+    auto start_time = std::chrono::high_resolution_clock::now();
     run_simulation_matrix_free<dim, fe_degree, ref_level>(pcout);
+    auto end_time = std::chrono::high_resolution_clock::now();
+    pcout << "Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << " ms" << std::endl;
     pcout << std::endl;
 
     pcout << "Running classic simulation with " << mpi_size << " processors" << std::endl;
-    run_simulation_classic<dim, fe_degree, ref_level>(pcout);
+    start_time = std::chrono::high_resolution_clock::now();
+    run_simulation_classic<dim, fe_degree, ref_level>();
+    end_time = std::chrono::high_resolution_clock::now();
+    pcout << "Time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << " ms" << std::endl;
     pcout << std::endl;
 
     return 0;

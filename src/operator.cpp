@@ -82,21 +82,21 @@ void CustomOperator<dim, fe_degree>::local_apply(const MatrixFree<dim, double>  
         phi.evaluate(EvaluationFlags::values | EvaluationFlags::gradients);
 
         for (unsigned int q = 0; q < phi.n_q_points; ++q) {
-            phi.submit_gradient(mu_coefficients(cell_batch, q) * phi.get_gradient(q), q);
+            auto value = phi.get_value(q);
+            auto gradient = phi.get_gradient(q);
+
+            phi.submit_gradient(mu_coefficients(cell_batch, q) * gradient, q);
 
             VectorizedArray<double> sum = 0;
             for (unsigned int d = 0; d < dim; ++d)
-                sum += beta_coefficients(cell_batch, q, d) * phi.get_gradient(q)[d];
+                sum += beta_coefficients(cell_batch, q, d) * gradient[d];
 
-            phi.submit_value(gamma_coefficients(cell_batch, q) * phi.get_value(q) - sum, q);
+            phi.submit_value(gamma_coefficients(cell_batch, q) * value - sum, q);
         }
         phi.integrate(EvaluationFlags::values | EvaluationFlags::gradients);
         phi.distribute_local_to_global(dst);
     }
 }
-
-
-
 
 template<int dim, int fe_degree>
 void CustomOperator<dim, fe_degree>::compute_diagonal() {}
