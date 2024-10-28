@@ -52,24 +52,27 @@ sorted_process_counts = sorted(matrix_free_speedup.keys())
 # Create a figure with 1 row and 2 columns of subplots
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
 
-# Plot speedup on the left
+# Plot speedup on the left with logarithmic scale
 ax1.plot(sorted_process_counts, [matrix_free_speedup[p] for p in sorted_process_counts], 
          marker='o', label='Matrix-Free Simulation Speedup', color='b')
 ax1.plot(sorted_process_counts, [classic_speedup[p] for p in sorted_process_counts], 
          marker='s', label='Classic Simulation Speedup', color='r')
+ax1.plot(sorted_process_counts, sorted_process_counts, '--', label='Ideal Speedup', color='gray')
+ax1.set_yscale('log')
 ax1.set_xlabel('Number of Processors')
-ax1.set_ylabel('Speedup')
+ax1.set_ylabel('Speedup (Log Scale)')
 ax1.set_title('Speedup of Matrix-Free vs Classic Simulation')
 ax1.legend()
 ax1.grid(True)
 
-# Plot simulation times on the right
+# Plot simulation times on the right with logarithmic scale
 ax2.plot(sorted_process_counts, [matrix_free_times[p] for p in sorted_process_counts], 
          marker='o', label='Matrix-Free Simulation Time', color='b')
 ax2.plot(sorted_process_counts, [classic_times[p] for p in sorted_process_counts], 
          marker='s', label='Classic Simulation Time', color='r')
+ax2.set_yscale('log')
 ax2.set_xlabel('Number of Processors')
-ax2.set_ylabel('Simulation Time (ms)')
+ax2.set_ylabel('Simulation Time (ms, Log Scale)')
 ax2.set_title('Simulation Time of Matrix-Free vs Classic Simulation')
 ax2.legend()
 ax2.grid(True)
