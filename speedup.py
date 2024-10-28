@@ -1,6 +1,7 @@
 import os
 import re
 import matplotlib.pyplot as plt
+from matplotlib.ticker import ScalarFormatter
 
 # Initialize dictionaries to store times by process count
 matrix_free_times = {}
@@ -58,9 +59,10 @@ ax1.plot(sorted_process_counts, [matrix_free_speedup[p] for p in sorted_process_
 ax1.plot(sorted_process_counts, [classic_speedup[p] for p in sorted_process_counts], 
          marker='s', label='Classic Simulation Speedup', color='r')
 ax1.plot(sorted_process_counts, sorted_process_counts, '--', label='Ideal Speedup', color='gray')
+ax1.set_xscale('log')
 ax1.set_yscale('log')
 ax1.set_xlabel('Number of Processors')
-ax1.set_ylabel('Speedup (Log Scale)')
+ax1.set_ylabel('Speedup')
 ax1.set_title('Speedup of Matrix-Free vs Classic Simulation')
 ax1.legend()
 ax1.grid(True)
@@ -70,12 +72,28 @@ ax2.plot(sorted_process_counts, [matrix_free_times[p] for p in sorted_process_co
          marker='o', label='Matrix-Free Simulation Time', color='b')
 ax2.plot(sorted_process_counts, [classic_times[p] for p in sorted_process_counts], 
          marker='s', label='Classic Simulation Time', color='r')
+ax2.set_xscale('log')
 ax2.set_yscale('log')
 ax2.set_xlabel('Number of Processors')
-ax2.set_ylabel('Simulation Time (ms, Log Scale)')
+ax2.set_ylabel('Simulation Time (ms)')
 ax2.set_title('Simulation Time of Matrix-Free vs Classic Simulation')
 ax2.legend()
 ax2.grid(True)
+
+# Use ScalarFormatter and disable scientific notation for ax1 and ax2 x-axis
+formatter = ScalarFormatter()
+formatter.set_scientific(False)
+formatter.set_useOffset(False)
+
+# Apply to both axes
+ax1.xaxis.set_major_formatter(formatter)
+ax2.xaxis.set_major_formatter(formatter)
+ax1.xaxis.set_minor_formatter(formatter)
+ax2.xaxis.set_minor_formatter(formatter)
+
+# Set x-axis ticks to only the processor counts where you have data
+ax1.set_xticks(sorted_process_counts)
+ax2.set_xticks(sorted_process_counts)
 
 # Adjust layout and show plot
 plt.tight_layout()
