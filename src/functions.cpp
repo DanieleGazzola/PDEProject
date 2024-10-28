@@ -1,5 +1,7 @@
 #include "functions.h"
 
+using VectorType = VectorizedArray<double>;
+
 template <int dim>
 double MuFunction<dim>::value(const Point<dim> & p, const unsigned int component) const
 {
@@ -14,19 +16,23 @@ number MuFunction<dim>::value(const Point<dim, number> & /*p*/, const unsigned i
 }
 
 template <int dim>
-double BetaFunction<dim>::value(const Point<dim> & p, const unsigned int component) const
+Tensor<1, dim, double> BetaFunction<dim>::gradient(const Point<dim> & p, const unsigned int /*component*/) const
 {
-    return value<double>(p, component);
+    return gradient(p);
 }
 
 template <int dim>
 template <typename number>
-number BetaFunction<dim>::value(const Point<dim, number> & /*p*/, const unsigned int component) const
+Tensor<1, dim, number> BetaFunction<dim>::gradient(const Point<dim, number> & /*p*/, const unsigned int /*component*/) const
 {
-    if(component == 0) // ∇·(βu)
-        return 0.0;
-    else
-        return 0.0;
+    Tensor<1, dim, number> beta; // ∇·(βu)
+
+    beta[0] = 0.0;
+    beta[1] = 0.0;
+    if constexpr (dim == 3)
+        beta[2] = 0.0;
+
+    return beta;
 }
 
 template <int dim>
@@ -87,13 +93,17 @@ template class GFunction<3>;
 template class HFunction<2>;
 template class HFunction<3>;
 
-template dealii::VectorizedArray<double> MuFunction<2>::value<dealii::VectorizedArray<double>>(const dealii::Point<2, dealii::VectorizedArray<double>> &, const unsigned int) const;
-template dealii::VectorizedArray<double> BetaFunction<2>::value<dealii::VectorizedArray<double>>(const dealii::Point<2, dealii::VectorizedArray<double>> &, const unsigned int) const;
-template dealii::VectorizedArray<double> GammaFunction<2>::value<dealii::VectorizedArray<double>>(const dealii::Point<2, dealii::VectorizedArray<double>> &, const unsigned int) const;
-template dealii::VectorizedArray<double> SourceFunction<2>::value<dealii::VectorizedArray<double>>(const dealii::Point<2, dealii::VectorizedArray<double>> &, const unsigned int) const;
-template dealii::VectorizedArray<double> HFunction<2>::value<dealii::VectorizedArray<double>>(const dealii::Point<2, dealii::VectorizedArray<double>> &, const unsigned int) const;
-template dealii::VectorizedArray<double> MuFunction<3>::value<dealii::VectorizedArray<double>>(const dealii::Point<3, dealii::VectorizedArray<double>> &, const unsigned int) const;
-template dealii::VectorizedArray<double> BetaFunction<3>::value<dealii::VectorizedArray<double>>(const dealii::Point<3, dealii::VectorizedArray<double>> &, const unsigned int) const;
-template dealii::VectorizedArray<double> GammaFunction<3>::value<dealii::VectorizedArray<double>>(const dealii::Point<3, dealii::VectorizedArray<double>> &, const unsigned int) const;
-template dealii::VectorizedArray<double> SourceFunction<3>::value<dealii::VectorizedArray<double>>(const dealii::Point<3, dealii::VectorizedArray<double>> &, const unsigned int) const;
-template dealii::VectorizedArray<double> HFunction<3>::value<dealii::VectorizedArray<double>>(const dealii::Point<3, dealii::VectorizedArray<double>> &, const unsigned int) const;
+template VectorType MuFunction<2>::value(const dealii::Point<2, VectorType> &, const unsigned int) const;
+template VectorType MuFunction<3>::value(const dealii::Point<3, VectorType> &, const unsigned int) const;
+
+template Tensor<1, 2, VectorType> BetaFunction<2>::gradient(const dealii::Point<2, VectorType> &, const unsigned int) const;
+template Tensor<1, 3, VectorType> BetaFunction<3>::gradient(const dealii::Point<3, VectorType> &, const unsigned int) const;
+
+template VectorType GammaFunction<2>::value(const dealii::Point<2, VectorType> &, const unsigned int) const;
+template VectorType GammaFunction<3>::value(const dealii::Point<3, VectorType> &, const unsigned int) const;
+
+template VectorType SourceFunction<2>::value(const dealii::Point<2, VectorType> &, const unsigned int) const;
+template VectorType SourceFunction<3>::value(const dealii::Point<3, VectorType> &, const unsigned int) const;
+
+template VectorType HFunction<2>::value(const dealii::Point<2, VectorType> &, const unsigned int) const;
+template VectorType HFunction<3>::value(const dealii::Point<3, VectorType> &, const unsigned int) const;

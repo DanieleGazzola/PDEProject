@@ -47,7 +47,8 @@ public:
 private:
 
     Table<2, VectorizedArray<double>> mu_coefficients;
-    Table<3, VectorizedArray<double>> beta_coefficients;
+    //Table<3, VectorizedArray<double>> beta_coefficients;
+    Table<2, Tensor<1, dim, VectorizedArray<double>>> beta_coefficients;
     Table<2, VectorizedArray<double>> gamma_coefficients;
 
     const AffineConstraints<double> *constraints_ptr;

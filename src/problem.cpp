@@ -153,7 +153,7 @@ template<int dim, int fe_degree>
 void Problem<dim, fe_degree>::solve()
 {
     SolverControl solver_control(10000, 1e-12);
-    SolverGMRES<TrilinosWrappers::MPI::Vector> solver(solver_control);
+    SolverCG<TrilinosWrappers::MPI::Vector> solver(solver_control);
     solver.solve(system_matrix, solution, system_rhs, PreconditionIdentity());
     pcout << "N-iterations: " << solver_control.last_step() << std::endl;
 }

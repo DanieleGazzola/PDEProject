@@ -6,6 +6,7 @@
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/mapping_q1.h>
 #include <deal.II/grid/grid_generator.h>
+#include <deal.II/lac/solver_cg.h>
 #include <deal.II/lac/solver_gmres.h>
 #include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/vector.h>
@@ -107,7 +108,7 @@ void run_simulation_matrix_free(ConditionalOStream &pcout){
     constraints.distribute(rhs);
 
     SolverControl solver_control(10000, 1e-12);
-    SolverGMRES<VectorType> solver(solver_control);
+    SolverCG<VectorType> solver(solver_control);
 
     solver.solve(custom_operator, solution, rhs, PreconditionIdentity());
 
@@ -142,9 +143,9 @@ void run_simulation_classic(){
 
 int main(int argc, char *argv[]){
 
-    const unsigned int dim       = 3;
+    const unsigned int dim       = 2;
     const unsigned int fe_degree = 1;
-    const unsigned int ref_level = 6;
+    const unsigned int ref_level = 9;
 
     Utilities::MPI::MPI_InitFinalize mpi_init(argc, argv);
     const unsigned int mpi_size = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
