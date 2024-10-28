@@ -1,7 +1,7 @@
 import os
 import re
 import matplotlib.pyplot as plt
-from matplotlib.ticker import ScalarFormatter
+from matplotlib.ticker import LogFormatter, LogLocator
 
 # Initialize dictionaries to store times by process count
 matrix_free_times = {}
@@ -65,7 +65,7 @@ ax1.set_xlabel('Number of Processors')
 ax1.set_ylabel('Speedup')
 ax1.set_title('Speedup of Matrix-Free vs Classic Simulation')
 ax1.legend()
-ax1.grid(True)
+ax1.grid(True, 'both', linestyle='-')
 
 # Plot simulation times on the right with logarithmic scale
 ax2.plot(sorted_process_counts, [matrix_free_times[p] for p in sorted_process_counts], 
@@ -78,22 +78,23 @@ ax2.set_xlabel('Number of Processors')
 ax2.set_ylabel('Simulation Time (ms)')
 ax2.set_title('Simulation Time of Matrix-Free vs Classic Simulation')
 ax2.legend()
-ax2.grid(True)
+ax2.grid(True, 'both', linestyle='-')
 
 # Use ScalarFormatter and disable scientific notation for ax1 and ax2 x-axis
-formatter = ScalarFormatter()
-formatter.set_scientific(False)
-formatter.set_useOffset(False)
-
-# Apply to both axes
+formatter = LogFormatter(2)
 ax1.xaxis.set_major_formatter(formatter)
 ax2.xaxis.set_major_formatter(formatter)
+ax1.yaxis.set_major_formatter(formatter)
+ax1.yaxis.set_major_formatter(formatter)
 ax1.xaxis.set_minor_formatter(formatter)
 ax2.xaxis.set_minor_formatter(formatter)
 
 # Set x-axis ticks to only the processor counts where you have data
-ax1.set_xticks(sorted_process_counts)
-ax2.set_xticks(sorted_process_counts)
+locator = LogLocator(2)
+ax1.xaxis.set_major_locator(locator)
+ax1.xaxis.set_minor_locator(locator)
+ax2.xaxis.set_major_locator(locator)
+ax2.xaxis.set_minor_locator(locator)
 
 # Adjust layout and show plot
 plt.tight_layout()
