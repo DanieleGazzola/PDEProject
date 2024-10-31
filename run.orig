@@ -27,6 +27,6 @@ sort "${PBS_NODEFILE}" | uniq -c | awk '{printf("%s\n", $2);}' > mpd.CORES.nodes
 mpirun -machinefile mpd.CORES.nodes -n CORES -npernode CORES ./PDEProject &> "$current_dir/stdout_CORES.txt"
 
 mkdir -p ../result/CORES
-cp -rf solution_classicCORES* ../result/CORES
-cp -rf solutionCORES* ../result/CORES
-cp -rf stdout_CORES* ../result/CORES
+cp -rf solution_classicCORES_* ../result/CORES
+cp -rf solutionCORES_* ../result/CORES
+cp -rf stdout_CORES.txt ../result/CORES
